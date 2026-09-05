@@ -1,0 +1,1 @@
+//Structs and RAID 1 function declarations

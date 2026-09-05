@@ -1,0 +1,1 @@
+//Copy, delete function declarations
