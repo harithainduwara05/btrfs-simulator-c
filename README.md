@@ -129,57 +129,7 @@ When `fcopy source.txt dest.txt` is executed:
 
 ---
 
-## 7. Step-by-Step Viva / Presentation Demonstration Script
-
-Follow this sequence to demonstrate all aspects of the assignment:
-
-### Step 1: Create a File
-```text
-btrfs> fcreate report.txt
-content: Operating Systems Btrfs RAID 1 Project Demonstration
-```
-*Creates file, allocates blocks, writes to both Disk 1 and Disk 2.*
-
-### Step 2: Demonstrate Copy-on-Write (CoW)
-```text
-btrfs> fcopy report.txt report_backup.txt
-```
-*Observe console output: `shared 1 blocks, 0 extra disk blocks allocated`.*
-
-### Step 3: Enter Developer Mode and Inspect Block Allocation
-```text
-btrfs> dev-m
-Enter Developer Password: 1234
-btrfs(dev)> show-alldev
-```
-*Notice both `report.txt` and `report_backup.txt` have `RefCnt = 2` and point to the exact same `Allocated Block IDs: [0]`.*
-
-### Step 4: Inject Corruption & Demonstrate Self-Healing
-```text
-btrfs(dev)> fdamage 1 0
-btrfs(dev)> fread report.txt
-```
-*Observe output:*
-* `[BTRFS ALERT] Data corruption detected on Disk 1 at Block 0!`
-* `[BTRFS SELF-HEAL] Repaired Disk 1 Block 0 using healthy data from Disk 2!`
-* File content is successfully recovered and printed intact!
-
-### Step 5: Check RAID Metrics
-```text
-btrfs(dev)> fstatus
-```
-*Displays `Self-Heal Operations : 1`.*
-
-### Step 6: Demonstrate Safe CoW Deletion
-```text
-btrfs(dev)> fdel report.txt
-btrfs(dev)> fread report_backup.txt
-```
-*Notice `report.txt` is deleted, but `report_backup.txt` still reads data seamlessly because the shared block was preserved!*
-
----
-
-## 8. Compilation & Execution
+## 7. Compilation & Execution
 
 ```bash
 # Clean previous builds
