@@ -11,6 +11,7 @@ static int disk2_online = 1;
 static int self_heal_count = 0;
 
 static int block_used[TOTAL_BLOCKS];
+static int block_ref_count[TOTAL_BLOCKS];
 static Inode inode_table[MAX_FILES];
 
 //Done
@@ -118,6 +119,7 @@ void fs_init(void) {
     memset(disk2, 0, sizeof(disk2));
     memset(block_checksums, 0, sizeof(block_checksums));
     memset(block_used, 0, sizeof(block_used));
+    memset(block_ref_count, 0, sizeof(block_ref_count));
     memset(inode_table, 0, sizeof(inode_table));
 
     disk1_online = 1;
@@ -129,6 +131,7 @@ int allocate_block(void) {
     for (int i = 0; i < TOTAL_BLOCKS; i++) {
         if (block_used[i] == 0) {
             block_used[i] = 1;
+            block_ref_count[i] = 1;
             return i;
         }
     }
@@ -138,9 +141,32 @@ int allocate_block(void) {
 void free_block(int block_num) {
     if (block_num >= 0 && block_num < TOTAL_BLOCKS) {
         block_used[block_num] = 0;
+        block_ref_count[block_num] = 0;
         uint8_t zero_buffer[BLOCK_SIZE] = {0};
         raid1_write_block(block_num, zero_buffer);
     }
+}
+
+void inc_block_ref(int block_num) {
+    if (block_num >= 0 && block_num < TOTAL_BLOCKS) {
+        block_ref_count[block_num]++;
+    }
+}
+
+void dec_block_ref(int block_num) {
+    if (block_num >= 0 && block_num < TOTAL_BLOCKS && block_ref_count[block_num] > 0) {
+        block_ref_count[block_num]--;
+        if (block_ref_count[block_num] == 0) {
+            free_block(block_num);
+        }
+    }
+}
+
+int get_block_ref(int block_num) {
+    if (block_num >= 0 && block_num < TOTAL_BLOCKS) {
+        return block_ref_count[block_num];
+    }
+    return 0;
 }
 
 int allocate_inode(void) {

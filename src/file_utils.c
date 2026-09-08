@@ -40,10 +40,8 @@ int fs_copy_file(const char *src_filename, const char *dest_filename) {
 
     for (int i = 0; i < src->block_count; i++) {
         dest->block_pointers[i] = src->block_pointers[i];
+        inc_block_ref(src->block_pointers[i]);
     }
-
-    src->ref_count++;
-    dest->ref_count = src->ref_count;
 
     printf("[FILE-UTILS CoW] Successfully copied '%s' to '%s' (shared %d blocks, 0 extra disk blocks allocated).\n",
            src_filename, dest_filename, dest->block_count);
@@ -65,29 +63,7 @@ int fs_delete_file(const char *filename) {
     Inode *target = get_inode(inode_id);
 
     for (int i = 0; i < target->block_count; i++) {
-        int blk = target->block_pointers[i];
-        int is_shared = 0;
-
-        for (int j = 0; j < MAX_FILES; j++) {
-            if (j == inode_id) continue;
-            Inode *other = get_inode(j);
-            if (other != NULL) {
-                for (int k = 0; k < other->block_count; k++) {
-                    if (other->block_pointers[k] == blk) {
-                        is_shared = 1;
-                        if (other->ref_count > 1) {
-                            other->ref_count--;
-                        }
-                        break;
-                    }
-                }
-            }
-            if (is_shared) break;
-        }
-
-        if (!is_shared) {
-            free_block(blk);
-        }
+        dec_block_ref(target->block_pointers[i]);
     }
 
     free_inode(inode_id);

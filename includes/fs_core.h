@@ -29,6 +29,9 @@ void raid1_print_status(void);
 
 int allocate_block(void);
 void free_block(int block_num);
+void inc_block_ref(int block_num);
+void dec_block_ref(int block_num);
+int get_block_ref(int block_num);
 int allocate_inode(void);
 void free_inode(int inode_id);
 Inode* get_inode(int inode_id);

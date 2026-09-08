@@ -38,8 +38,9 @@ static void fs_list_files_dev(void) {
     for (int i = 0; i < MAX_FILES; i++) {
         Inode *inode = get_inode(i);
         if (inode != NULL) {
+            int ref = (inode->block_count > 0) ? get_block_ref(inode->block_pointers[0]) : 0;
             printf(" %-3d %-25s %8d %7d %8d [",
-                   i, inode->filename, inode->size, inode->block_count, inode->ref_count);
+                   i, inode->filename, inode->size, inode->block_count, ref);
             for (int b = 0; b < inode->block_count; b++) {
                 printf("%d%s", inode->block_pointers[b], (b == inode->block_count - 1) ? "" : ", ");
             }
