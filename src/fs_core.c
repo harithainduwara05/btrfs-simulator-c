@@ -81,7 +81,7 @@ int raid1_read_block(int block_num, void *buffer) {
     printf("[BTRFS CRITICAL] Read failed! Both disks are unavailable or corrupted at Block %d.\n", block_num);
     return -1;
 }
-
+//Test the RAID 1 Self Healing Process
 void raid1_corrupt_block(int disk_id, int block_num) {
     if (block_num < 0 || block_num >= TOTAL_BLOCKS) return;
 
@@ -94,6 +94,7 @@ void raid1_corrupt_block(int disk_id, int block_num) {
     }
 }
 
+//Test the RAID 1 Disk Status Changes
 void raid1_set_disk_status(int disk_id, int is_online) {
     if (disk_id == 1) {
         disk1_online = is_online;
@@ -176,4 +177,3 @@ int find_inode_by_name(const char *name) {
     }
     return -1;
 }
-
