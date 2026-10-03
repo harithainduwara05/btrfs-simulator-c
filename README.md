@@ -8,12 +8,13 @@ The simulator demonstrates core Btrfs characteristics:
 2. **RAID Level 1 (Disk Mirroring)**: Simultaneous dual-disk replication across simulated in-memory storage devices (`disk1` and `disk2`).
 3. **Data Integrity & Self-Healing**: Block-level checksum verification that automatically detects silent data corruption ("bit rot") and reconstructs corrupted data using the healthy mirror disk.
 4. **Optimized for Small Text Files**: Custom small block size ($128\text{ bytes}$) configured for lightweight text storage.
+5. **Standard B-Tree Indexing ($O(\log n)$)**: Complete Standard B-Tree ($T = 2$, Order 4) index structure mapping `filename -> inode_id` with dynamic node splitting, borrowing, merging, and full CLRS-compliant deletion.
 
 ---
 
 ## 2. System Architecture & Component Hierarchy
 
-The system follows a strict modular 4-tier design pattern:
+The system follows a strict modular 5-tier design pattern:
 
 ```
 +==========================================================================+
@@ -30,12 +31,23 @@ The system follows a strict modular 4-tier design pattern:
 | - fs_list_files()             |      | - fs_delete_file() [Safe Delete]  |
 |                               |      | - fs_read_file() [Self-Heal Read] |
 +-------------------------------+      +-----------------------------------+
-      \                                              /
-       \                                            /
-        v                                          v
+      |                                              |
+      +----------------------+-----------------------+
+                             |
+                             v
 +==========================================================================+
-|                      TIER 4: CORE BRAIN & STORAGE                        |
-|                  (includes/fs_core.h, src/fs_core.c)                     |
+|                   TIER 4: B-TREE INDEXING ENGINE                         |
+|                 (includes/btree.h, src/btree.c)                          |
+|                                                                          |
+|  - Standard B-Tree (T = 2, Order 4) storing (filename -> inode_id)       |
+|  - O(log n) File Lookup, Insert with Split, Full Delete with Merge       |
+|  - In-order tree traversal & live ASCII hierarchy visualizer             |
++==========================================================================+
+                             |
+                             v
++==========================================================================+
+|                   TIER 5: STORAGE BRAIN & RAID-1                         |
+|                 (includes/fs_core.h, src/fs_core.c)                      |
 |                                                                          |
 |  - RAM Disks: disk1[1000][128], disk2[1000][128]                         |
 |  - Metadata: Inode Table (64 files), Block Allocator (First-Fit)         |
@@ -122,6 +134,7 @@ When `fcopy source.txt dest.txt` is executed:
 | Command | Syntax | Description |
 | :--- | :--- | :--- |
 | `show-alldev` | `show-alldev` | Displays extended file table with **RefCnt** and **Allocated Block IDs** (e.g. `[0, 1]`) |
+| `btree-show` | `btree-show` | Displays live ASCII hierarchy of the B-Tree (Internal/Leaf nodes, keys, and inode IDs) |
 | `fdamage` | `fdamage <disk_id> <block>` | Injects byte corruption into a block to test Self-Healing |
 | `fdisk` | `fdisk <disk_id> <1\|0>` | Manually sets Disk 1 or 2 Online (`1`) or Offline (`0`) |
 | `fstatus` | `fstatus` | Displays RAID-1 disk status and cumulative self-heal count |
@@ -129,7 +142,23 @@ When `fcopy source.txt dest.txt` is executed:
 
 ---
 
-## 7. Compilation & Execution
+## 7. B-Tree Data Structure & Algorithm (ADSA Focus)
+
+The file index uses a **Standard B-Tree** of minimum degree $T = 2$ (Order 4, 2-3-4 tree variant):
+
+* **Key Capacity**: Every internal/leaf node contains between $T - 1 = 1$ and $2T - 1 = 3$ keys.
+* **Child Pointers**: Every non-leaf node with $k$ keys contains exactly $k + 1$ children.
+* **Search Complexity**: Searching for a file by name executes in $O(\log n)$ string comparisons instead of linear $O(n)$ scanning.
+* **Insertion with Proactive Splitting**: When inserting into a full node ($3$ keys), the node splits around the median key ($T-1$), elevating the median to the parent.
+* **CLRS-Compliant Deletion**:
+  1. **Leaf Deletion**: If the key is in a leaf with $> T-1$ keys, it is directly removed.
+  2. **Internal Node Replacement**: Replaced by its in-order predecessor or successor.
+  3. **Borrowing & Merging**: If a child node has fewer than $T$ keys, it borrows from an immediate sibling or merges with a sibling, ensuring all B-Tree properties remain invariant.
+* **Live ASCII Visualization**: Developers can inspect the active tree balancing using the `btree-show` command.
+
+---
+
+## 8. Compilation & Execution
 
 ```bash
 # Clean previous builds

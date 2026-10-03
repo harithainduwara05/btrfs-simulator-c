@@ -1,4 +1,5 @@
 #include "../includes/file_utils.h"
+#include "../includes/btree.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -45,6 +46,8 @@ int fs_copy_file(const char *src_filename, const char *dest_filename) {
 
     printf("[FILE-UTILS CoW] Successfully copied '%s' to '%s' (shared %d blocks, 0 extra disk blocks allocated).\n",
            src_filename, dest_filename, dest->block_count);
+
+    btree_insert(dest_filename, dest_id);
     return dest_id;
 }
 
@@ -67,6 +70,7 @@ int fs_delete_file(const char *filename) {
     }
 
     free_inode(inode_id);
+    btree_delete(filename);
     printf("[FILE-UTILS] Successfully deleted '%s'.\n", filename);
     return 0;
 }

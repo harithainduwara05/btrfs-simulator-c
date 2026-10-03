@@ -1,4 +1,5 @@
 #include "../includes/file_ops.h"
+#include "../includes/btree.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -80,6 +81,8 @@ int fs_create_file(const char *filename, const void *data, int size) {
     printf("[FILE-OPS] Created '%s' (%d bytes, %d block%s, inode %d).\n",
            filename, size, inode->block_count,
            inode->block_count == 1 ? "" : "s", inode_id);
+
+    btree_insert(filename, inode_id);
 
     return inode_id;
 }

@@ -1,4 +1,5 @@
 #include "../includes/fs_core.h"
+#include "../includes/btree.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -125,6 +126,8 @@ void fs_init(void) {
     disk1_online = 1;
     disk2_online = 1;
     self_heal_count = 0;
+
+    btree_init();
 }
 
 int allocate_block(void) {
@@ -196,10 +199,5 @@ Inode* get_inode(int inode_id) {
 
 int find_inode_by_name(const char *name) {
     if (name == NULL) return -1;
-    for (int i = 0; i < MAX_FILES; i++) {
-        if (inode_table[i].is_used && strcmp(inode_table[i].filename, name) == 0) {
-            return i;
-        }
-    }
-    return -1;
+    return btree_search(name);
 }
