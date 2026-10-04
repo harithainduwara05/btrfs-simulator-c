@@ -1,6 +1,7 @@
 #include "../includes/fs_core.h"
 #include "../includes/file_ops.h"
 #include "../includes/file_utils.h"
+#include "../includes/btree.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +20,7 @@ static void print_help(int dev_mode) {
     if (dev_mode) {
         printf("\n------------- DEVELOPER & RAID-1 TEST COMMANDS -------------\n");
         printf(" show-alldev                 : Show detailed file mapping & block numbers\n");
+        printf(" btree-show                  : View live B-Tree structure & hierarchy\n");
         printf(" fdamage <disk_id> <block>   : Corrupt a block to test Self-Healing\n");
         printf("                               (Example: fdamage 1 0)\n");
         printf(" fdisk <disk_id> <1|0>       : Set disk status (1 = Online, 0 = Offline)\n");
@@ -229,10 +231,17 @@ int main(void) {
                 continue;
             }
             raid1_print_status();
+        } else if (strcmp(command, "btree-show") == 0) {
+            if (!dev_mode) {
+                printf("[RESTRICTED] 'btree-show' requires Developer Mode. Type 'dev-m' first.\n");
+                continue;
+            }
+            btree_print();
         } else {
             printf("[UNKNOWN COMMAND] '%s'. Type 'help' to see available commands.\n", command);
         }
     }
 
+    btree_destroy();
     return 0;
 }
