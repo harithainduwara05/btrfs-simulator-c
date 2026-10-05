@@ -113,13 +113,30 @@ int main(void) {
                 continue;
             }
 
-            char content[2048] = {0};
+            char content[8192] = {0};
             printf("content: ");
             fflush(stdout);
 
             if (fgets(content, sizeof(content), stdin) != NULL) {
-                content[strcspn(content, "\r\n")] = '\0';
-                fs_create_file(arg1, content, (int)strlen(content));
+                char *nl = strchr(content, '\n');
+                if (nl != NULL) {
+                    *nl = '\0';
+                } else {
+                    /* Input was longer than buffer; drain stdin so leftovers don't run as commands */
+                    int c;
+                    while ((c = getchar()) != '\n' && c != EOF);
+                }
+                content[strcspn(content, "\r")] = '\0';
+
+                int len = (int)strlen(content);
+                if (len > MAX_FILE_SIZE) {
+                    printf("[WARNING] Input (%d bytes) exceeds maximum file capacity (%d bytes). Truncated to %d bytes.\n",
+                           len, MAX_FILE_SIZE, MAX_FILE_SIZE);
+                    content[MAX_FILE_SIZE] = '\0';
+                    len = MAX_FILE_SIZE;
+                }
+
+                fs_create_file(arg1, content, len);
             }
         } else if (strcmp(command, "fcopy") == 0) {
             if (parsed < 3) {

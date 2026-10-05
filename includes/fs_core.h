@@ -9,6 +9,7 @@
 #define MAX_FILES 64
 #define MAX_FILENAME 128
 #define MAX_BLOCKS_PER_FILE 20
+#define MAX_FILE_SIZE (MAX_BLOCKS_PER_FILE * BLOCK_SIZE)
 
 typedef struct {
     char filename[MAX_FILENAME];
